@@ -6,8 +6,8 @@ const lambda = new aws.Lambda();
 const botBuilder = require('claudia-bot-builder');
 const slackDelayedReply = botBuilder.slackDelayedReply;
 
-const api = botBuilder((message, apiRequest, originalApiRequest) => {
-	console.log(originalApiRequest);
+const api = botBuilder((message, apiRequest) => {
+
 	const seconds = parseInt(message.text, 10);
 	if(Number.isInteger(seconds) && seconds > 0 && seconds < 61){
 		return new Promise((resolve, reject) => {
@@ -26,7 +26,8 @@ const api = botBuilder((message, apiRequest, originalApiRequest) => {
 		})
 		.then(() => {
 			return {
-				text: `Oky, I'll ping you in ${seconds}s.`,
+				text: `Oky, I'll ping you in ${seconds}s. \n` + 
+				`stageVariables => ` + JSON.stringify(apiRequest.env),
 				response_type: 'in_channel'
 			}
 		})
