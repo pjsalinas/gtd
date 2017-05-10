@@ -34,3 +34,24 @@ npm insatll 'other-dependencies' -S```
 ```ssc```
 
 ```claudia create --region us-east-1```
+
+
+# Preparing a Claudia Bot Project
+
+```mkdir dir_name
+cd dir_name
+add the bot.js
+npm installl claudia-bot-builder -S
+npm install claudia -g (if you have not done that)
+npm install 'other_modules' -S
+npm run deploy: claudia create --region us-east-1 --api-module bot
+npm run update: claudia update
+to test => mkdir test
+cd test, create a json file '{ "content": { "path": "/", "method": "GET" } }
+configure for the platform used: claudia update --configure-slack-slash-command, have slack token ready
+if using 3rd party APIs, get the keys
+add the keys as as stage variables in API gateway
+aws apigateway create-deployment \
+--rest-api-id <claudia api id> \
+--stage-name latest \
+--variables VAR_NAME=var_value,ANOTHER_VAR_NAME=another_var_value```
