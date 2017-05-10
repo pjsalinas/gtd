@@ -15,7 +15,8 @@ const api = botBuilder((message, apiRequest) => {
 				FunctionName: apiRequest.lambdaContext.functionName,
 				InvocationType: 'Event',
 				Payload: JSON.stringify({
-					slackEvent: message
+					slackEvent: message,
+					lambdaVersion: apiRequest.env.lambdaVersion
 				}),
 				Qualifier: apiRequest.lambdaContext.functionVersion
 			}, (err, done) => {
@@ -26,8 +27,7 @@ const api = botBuilder((message, apiRequest) => {
 		})
 		.then(() => {
 			return {
-				text: `Oky, I'll ping you in ${seconds}s. \n` + 
-				`stageVariables => ` + JSON.stringify(apiRequest.env),
+				text: `Oky, I'll ping you in ${seconds}s. \nstageVariables => ${apiRequest.env.lambdaVersion}`,
 				response_type: 'in_channel'
 			}
 		})
@@ -47,10 +47,13 @@ api.intercept((event) => {
 	const message = event.slackEvent;
 	const seconds = parseInt(message.text, 10);
 
+	
 	return promiseDelay(seconds * 1000)
 	.then(() => {
 		return slackDelayedReply(message, {
-			text: `${seconds} seconds passed.`,
+			text: `${seconds} seconds passed. \nlambdaVersion => ${event.lambdaVersion}` + `\n` +
+			`KEY => ` + process.env.AIRTABLE_API_KEY + `\n` +
+			`BASE => ` + process.env.AIRTABLE_BASE_GTD,
 			response_type: 'in_channel'
 		});
 	})
