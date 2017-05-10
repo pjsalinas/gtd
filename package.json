@@ -1,0 +1,23 @@
+{
+  "name": "ssc",
+  "version": "1.0.0",
+  "description": "Example of Slack Slash Command Delayed Response",
+  "main": "bot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "create": "claudia create --api-module bot --region us-east-1 --timeout 120 --allow-recursion --configure-slack-slash-command",
+    "update": "claudia update"
+  },
+  "keywords": [
+    "bot",
+    "slack",
+    "delayed"
+  ],
+  "author": "Pedro J. Salinas <pedrojsalinas@gmail.com> (http://www.sqlo.com)",
+  "license": "MIT",
+  "dependencies": {
+    "aws-sdk": "^2.49.0",
+    "claudia-bot-builder": "^2.15.0",
+    "promise-delay": "^2.1.0"
+  }
+}
