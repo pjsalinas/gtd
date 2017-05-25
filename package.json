@@ -16,8 +16,10 @@
   "author": "Pedro J. Salinas <pedrojsalinas@gmail.com> (http://www.sqlo.com)",
   "license": "MIT",
   "dependencies": {
+    "airtable": "^0.5.0",
     "aws-sdk": "^2.49.0",
     "claudia-bot-builder": "^2.15.0",
+    "lodash": "^4.17.4",
     "promise-delay": "^2.1.0"
   }
 }
