@@ -74,7 +74,7 @@ const api = botBuilder((message, apiRequest) => {
 		.then(() => {
 
 			return {
-				text: `*${view}*`,
+				text: `${view} tasks`,
 				response_type: 'in_channel'
 			}
 		})
@@ -110,6 +110,23 @@ api.intercept((event) => {
 	var base = new Airtable({
 		apiKey: process.env.AIRTABLE_API_KEY}).base(process.env.AIRTABLE_BASE_GTD);
 
+	var getRecord = (handler) => {
+
+		base('Tasks').select({
+			view: 'Uncomplete',
+			field: 'Handler'
+		}).firstPage(function(err, records) {
+			if (err) { console.error(err); return; }
+			records.forEach(function(record) {
+				console.log('Retrieved', record.get('Name'));
+				return record.getId();
+			});
+		});
+	}
+
+	// convert string `false` or `true` to boolean.
+	var toBool = (bool) => { return (bool == 'true'); }
+
 	if(action === 'add') {
 
 		if(!name || !cat) {
@@ -121,7 +138,9 @@ api.intercept((event) => {
 
 			var task = {"Name": name, "Categories": [categories[cat]] };
 
-			if(nextAction) { task = _.assign({}, task, {"Next Actions": true}); }
+			nextAction = toBool(nextAction); 
+
+			task = _.assign({}, task, {"Next Actions": nextAction});
 
 			if (date){ task = _.assign({}, task, {"Created Date": date}); } 
 
@@ -136,7 +155,9 @@ api.intercept((event) => {
 
 	} else if(action === 'done' || action === 'Done' || action === 'complete' || action === 'Complete') {
 
+		var handler = _.toUpper(_.last(_.split(message.text, " ")));
 		var id = _.last(_.split(message.text, " "));
+		//var id = getRecord(handler);
 
 		base('Tasks').update(id, {
 			"Completed": true
@@ -165,17 +186,19 @@ api.intercept((event) => {
 
 			if (err) { console.error(err); text = 'there was an error: ' + err; }
 
+			var count = 1;
 			_.each(records, (record) => {
 				// distiguish between `nextactions` and the other list
 				if(message.text === "nextactions"){
-					text += '• `' + record.getId() + '` "' + record.get('Name') + '" `' + record.get('Categories') + '`\n'; 
+					text += count + ' *' + record.get('Handler') + '*: ' + record.get('Name') + ' `' + record.get('Categories') + '`\n'; 
 				} else {
 					if(record.get('Next Actions')){ // add `Next Actions` if task is tagged.
-						text += '• `' + record.getId() + '` "' + record.get('Name') + '" `Next Actions`' + '\n';
+						text += count + ' ' + record.getId() + ': ' + record.get('Name') + ' `Next Actions`' + '\n';
 					} else {
-						text += '• `' + record.getId() + '` "' + record.get('Name') + '" ' + '\n';
+						text += count + ' ' + record.getId() + ': ' + record.get('Name') + '\n';
 					}
 				}
+				count++;
 			});
 		});
 	}
