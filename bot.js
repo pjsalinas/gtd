@@ -4,7 +4,7 @@
  * date:
  */
 
-'use-strict';
+'use strict';
 
 const promiseDelay = require('promise-delay');
 const aws = require('aws-sdk');
@@ -17,15 +17,22 @@ const _ = require('lodash');
 
 // json of the categories
 let categories = {
-	nextactions: 'Next Actions',
-	athome: 'At Home',
-	atwork: 'At Work',
-	tocall: 'To Call',
-	waitingfor: 'Waiting For',
+	nextactions: 'Next Actions', next: 'Next Actions',
+	athome: 'At Home', home: 'At Home',
+	atwork: 'At Work', work: 'At Work',
+	tocall: 'To Call', call: 'To Call', idea: 'Ideas',
+	waitingfor: 'Waiting For', wait: 'Waiting For',
+	errands: 'Errands', err: 'Errands',
 	add: 'Add',
-	help: 'Help',
-	done: 'Complete',
-	delete: 'Delete'
+	help: 'Help', 
+	complete: 'Done', done: 'Done',
+	delete: 'Delete', del: 'Delete', Del: 'Delete', remove: 'Remove',
+	shores: 'Shores',
+
+	load: "Shores List",
+	show: 'Show Something',
+	list: "The Lists",
+	projects: "List of Projects"
 };
 
 // this are the catetories
@@ -37,21 +44,25 @@ const api = botBuilder((message, apiRequest) => {
 	const action = _.first(_.split(text, " "));
 
 	if(_.includes(views, action)) {
-
-		if(action === 'help' || action === 'Help'){
+		
+		if(_.toUpper(action) === 'HELP') {
 			return 'Hey, "/gtd" help you to manage your Airtable tasks.\n' +
 				'• List "Next Actions" tasks: `/gtd nextactions`\n' +
 				'• List "At Home" tasks: `/gtd athome`\n' +
 				'• List "At Work" tasks: `/gtd atwork`\n' +
 				'• List "To Call" tasks: `/gtd tocall`\n' +
 				'• List "Waiting For" tasks: `/gtd waitingfor`\n' +
-				'• To mark a task as "Complete": `/gtd done _taskId_`\n' +
-				'• To "Delete" a task: `/gtd delete _taskId_`\n' +
-				'• To add a new task `/gtd add _Task Name_, _Category_, _Next Actions (yes or no)_, _Date_`\n' +
-				'Or, `/gtd add Remember The Milk, athome, yes, 2017-05-25`\n' +
-				'Next Actions and Date are optional.\n' +
-				'Not use this yet: `/gtd add Remember The Milk, athome, 2017-05-25`\n' +
-				'will be fixed next time';
+				'• List "Active Projects": `/gtd projects`\n' +
+				'• To mark a task as "Complete": `/gtd done "taskId`\n' +
+				'• To "Delete" a task: `/gtd delete "taskId"`\n' +
+				'• To add a new task `/gtd add "Task Name", "category", optional [true or false], optional [YYYY-MM-DD]`\n' +
+				'• Load list: `/gtd load "list name" [daily, weekly, monthly, quarterly]`\n' +
+				'• Doesn\'t work yet:\n' +
+				'`/gtd add Remember The Milk, athome, 2017-05-25`\n' +
+				'`/gtd move "handler" "category"`' +
+				'`/gtd show "handler"`' +
+				'`/gtd projects`\n' +
+				'`/gtd list`';
 		}
 
 		var view = categories[action];
@@ -74,7 +85,7 @@ const api = botBuilder((message, apiRequest) => {
 		.then(() => {
 
 			return {
-				text: `${view} tasks`,
+				text: `*${view}*`,
 				response_type: 'in_channel'
 			}
 		})
@@ -82,7 +93,7 @@ const api = botBuilder((message, apiRequest) => {
 			return `Could not setup timer :(`
 		});
 	} else {
-		return 'Wow, I don\'t know that. Valid commands: `nextactions`, `athome`, `atwork`, `tocall`, `waitingfor`, `add`, and `help`.';
+		return 'Wow, I don\'t know that.\nValid commands: `nextactions`, `athome`, `atwork`, `tocall`, `waitingfor`, `add`, `delete`, `done`, `load`, and `help`.';
 	}
 });
 
@@ -110,22 +121,57 @@ api.intercept((event) => {
 	var base = new Airtable({
 		apiKey: process.env.AIRTABLE_API_KEY}).base(process.env.AIRTABLE_BASE_GTD);
 
+	// Read a record, using the handler 'XXXX' from the list:
 	var getRecord = (handler) => {
+
+		var filterByFormula = '{Handler} = "' + handler + '"'; 
+		var Id = '';
 
 		base('Tasks').select({
 			view: 'Uncomplete',
-			field: 'Handler'
+			filterByFormula: filterByFormula
 		}).firstPage(function(err, records) {
 			if (err) { console.error(err); return; }
 			records.forEach(function(record) {
-				console.log('Retrieved', record.get('Name'));
-				return record.getId();
+				Id = record.getId();
 			});
+		});
+
+		return Id;
+	};
+
+	var updateRecord = (id) => {
+		base('Tasks').update(id, {
+			"Completed": true
+		}, function(err, record) {
+			if (err) { console.error(err); return; }
+
+			text = `Record "` + record.get('Name') + `" marked as Complete.`;
+		});
+	};
+
+	var deleteRecord = (id, name) => {
+		base('Tasks').destroy(id, (err, deletedRecord) => {
+			if (err) { console.error(err); return; }
+
+			text = `Record "${name}" was Deleted.`;
 		});
 	}
 
+	var stringToDate = (str) => {
+		return (new Date(str)).toString().split(' ').splice(1,3).join(' ');
+	};
+
+	var addRecord = (task) => {
+
+		base('Tasks').create(task, (err, record) => {
+			if(err) { console.error(err); return; }
+		});
+	};
+
 	// convert string `false` or `true` to boolean.
-	var toBool = (bool) => { return (bool == 'true'); }
+	var toBool = (bool) => { return (bool == 'true'); };
+
 
 	if(action === 'add') {
 
@@ -137,17 +183,13 @@ api.intercept((event) => {
 		} else {
 
 			var task = {"Name": name, "Categories": [categories[cat]] };
-
 			nextAction = toBool(nextAction); 
-
 			task = _.assign({}, task, {"Next Actions": nextAction});
-
 			if (date){ task = _.assign({}, task, {"Created Date": date}); } 
 
-			base('Tasks').create(task, function(err, record) {
-				if (err) { console.error(err); return; }
-				
-				//text = JSON.stringify(record); 
+			base('Tasks').create(task, (err, record) => {
+				if(err) { console.error(err); return; }
+
 				text = 'Added "' + record.get('Name') + '" to `' + record.get('Categories') + '`.';
 			});
 		}
@@ -156,53 +198,170 @@ api.intercept((event) => {
 	} else if(action === 'done' || action === 'Done' || action === 'complete' || action === 'Complete') {
 
 		var handler = _.toUpper(_.last(_.split(message.text, " ")));
-		var id = _.last(_.split(message.text, " "));
-		//var id = getRecord(handler);
-
-		base('Tasks').update(id, {
-			"Completed": true
-		}, function(err, record) {
-		
-			if (err) { console.error(err); return; }
-
-			text = `"` + record.get('Name') + `" marked as Complete.`;
-		});
-
-	} else if(action === 'delete' || action === 'Delete' || action === 'del' || action === 'Del') {
-
-		var id = _.last(_.split(message.text, " "));
-
-		base('Tasks').destroy(id, function(err, deletedRecord) {
-			if (err) { console.error(err); return; }
-
-			text = 'Record was Deleted'; // deletedRecord.id;
-		});
-
-	} else {
+		var filterByFormula = '{Handler} = "' + handler + '"'; 
 
 		base('Tasks').select({
-			view: categories[action]
-		}).firstPage(function(err, records) {
+			view: 'Uncomplete',
+			filterByFormula: filterByFormula
+		}).firstPage((err, records) => {
+			if (err) { console.error(err); return; }
 
-			if (err) { console.error(err); text = 'there was an error: ' + err; }
-
-			var count = 1;
-			_.each(records, (record) => {
-				// distiguish between `nextactions` and the other list
-				if(message.text === "nextactions"){
-					text += count + ' *' + record.get('Handler') + '*: ' + record.get('Name') + ' `' + record.get('Categories') + '`\n'; 
-				} else {
-					if(record.get('Next Actions')){ // add `Next Actions` if task is tagged.
-						text += count + ' ' + record.getId() + ': ' + record.get('Name') + ' `Next Actions`' + '\n';
-					} else {
-						text += count + ' ' + record.getId() + ': ' + record.get('Name') + '\n';
-					}
-				}
-				count++;
-			});
+			var id = records[0].getId();
+			updateRecord(id);
 		});
+
+	} else if(action === 'delete' || action === 'Delete' || action === 'del' || action === 'remove' || action === 'Del') {
+
+		var handler = _.toUpper(_.last(_.split(message.text, " ")));
+		var filterByFormula = '{Handler} = "' + handler + '"'; 
+
+		base('Tasks').select({
+			view: 'Uncomplete',
+			filterByFormula: filterByFormula
+		}).firstPage((err, records) => {
+			if (err) { console.error(err); return; }
+
+			var id = records[0].getId();
+			var name = records[0].get('Name');
+			deleteRecord(id, name);
+		});
+
+
+	} else if(action === 'show') {
+
+		var handler = _.toUpper(_.last(_.split(message.text, " ")));
+		var filterByFormula = '{Handler} = "' + handler + '"';
+
+		base('Tasks').select({
+			view: 'Uncomplete',
+			filterByFormula: filterByFormula
+		}).firstPage((err, records) => {
+			if (err) { console.error(err); return; }
+
+			var record = records[0];
+			text = 'Name: ' + record.get('Name') + '\n' +
+					'Category: ' + record.get('Categories') + '\n';
+			if(record.get('Next Actions') !== undefined){
+				text += 'Tagged `Next Action`' + '\n';
+			}
+			if(record.get('Created Date') !== undefined){
+				text += 'Created: ' + stringToDate(record.get('Created Date'));
+			}
+					
+		});
+
+	} else 	{
+
+		switch (true) {
+			case action === "load":
+				if(name === 'daily') {
+					var filterByFormula = '{Type} = "Daily Shores"';
+				} else if(name === 'weekly'){
+					var filterByFormula = '{Type} = "Weekly Shores"';
+				} else if(name === 'monthly') {
+					var filterByFormula = '{Type} = "Weekly Shores"';
+				} else if(name === 'quarterly') {
+					var filterByFormula = '{Type} = "Quartely Shores"';
+				}
+
+				base('Lists').select({
+					view: "Main View",
+					filterByFormula: filterByFormula
+				}).firstPage((err, records) => {
+					if(err) { console.error(err); return; }
+
+					_.each(records, (record) => {
+						var task = {
+							"Name": record.get("Name"),
+							"Next Actions": true,
+							"Categories": ["Shores"]
+						}
+						addRecord(task);
+					});
+					text = 'Your "' + _.capitalize(name) + '" Shores List was added!';
+				})
+				break;
+
+			case action === 'projects':
+
+				switch(true) {
+					case name === "add":
+						base('Projects').create({
+							"Name": cat
+						}, (err, record) => {
+							if(err) { console.error(err); return; }
+
+							text = 'Added "' + record.get("Name") + '" ';
+						});
+						break;
+
+					default:
+						base('Projects').select({
+							view: 'Active'
+						}).firstPage((err, records) => {
+							if(err) { console.error(err); return; }
+
+							_.each(records, (record) => {
+								text += '• *' + record.get('Handler') + '* "' + record.get('Name') + '"\n';
+							});				
+						});
+						break;
+				}
+				break;
+
+			default:
+				base('Tasks').select({
+					view: categories[action]
+				}).firstPage(function(err, records) {
+
+					if (err) { console.error(err); text = 'there was an error: ' + err; }
+
+					if(_.size(records) < 1){
+						text = 'There are not records on this list.'
+					} else {
+						var count = 1;
+						_.each(records, (record) => {
+							// distiguish between `nextactions` and the other list
+							if(!record.get("Complete")){
+								if(message.text === "nextactions" || message.text === 'next'){
+									text += count + ' *' + record.get('Handler') + '*: ' + record.get('Name') + ' `' + record.get('Categories') + '`\n'; 
+								} else {
+									if(record.get('Next Actions')){ // add `Next Actions` if task is tagged.
+										text += count + ' ' + record.get('Handler') + ' "' + record.get('Name') + '" `Next Actions`' + '\n';
+									} else {
+										text += count + ' ' + record.get('Handler') + ' "' + record.get('Name') + '"\n';
+									}
+								}
+								count++;
+							}
+						});
+					}
+				});
+				break;
+		}
 	}
 
+// next step for the script
+action = _.toUpper(action);
+switch(true){
+	case action === "ADD":
+		if(cat === "project") {
+			// create a project entry
+		} else {
+			// create a task entry
+		}
+		break;
+	case action === "DELETE" || action === "DEL":
+		
+		break;
+	case action === "UPDATE":
+		break;
+	case action === "READ":
+		break;
+
+	default:
+		break;
+}
 
 	return promiseDelay(seconds * 1000).then(() => {
 
