@@ -1,25 +1,40 @@
 {
-  "name": "ssc",
-  "version": "1.0.0",
-  "description": "Example of Slack Slash Command Delayed Response",
-  "main": "bot.js",
+  "name": "gtd",
+  "version": "0.0.1",
+  "description": "Create a Slack slash command, using Airtable as the CMS",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "create": "claudia create --api-module bot --region us-east-1 --timeout 120 --allow-recursion --configure-slack-slash-command",
-    "update": "claudia update"
+    "start": "node server.js",
+    "test": "./test_parcer.js"
   },
-  "keywords": [
-    "bot",
-    "slack",
-    "delayed"
-  ],
-  "author": "Pedro J. Salinas <pedrojsalinas@gmail.com> (http://www.sqlo.com)",
-  "license": "MIT",
   "dependencies": {
-    "airtable": "^0.5.0",
-    "aws-sdk": "^2.49.0",
-    "claudia-bot-builder": "^2.15.0",
-    "lodash": "^4.17.4",
-    "promise-delay": "^2.1.0"
+    "airtable": "^0.5.6",
+    "body-parser": "^1.18.3",
+    "dotenv": "^6.0.0",
+    "express": "^4.16.3",
+    "lodash": "^4.17.10",
+    "request": "^2.87.0"
+  },
+  "engines": {
+    "node": "8.x"
+  },
+  "repository": {
+    "url": "https://glitch.com/edit/#!/welcome-project"
+  },
+  "license": "MIT",
+  "keywords": [
+    "node",
+    "glitch",
+    "express",
+    "airtable",
+    "gtd",
+    "getting things done",
+    "tasks",
+    "to-do",
+    "todo"
+  ],
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "mocha": "^5.2.0"
   }
 }

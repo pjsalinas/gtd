@@ -1,57 +1,53 @@
-# Claudia-Bot-Builder
+# GTD
 
-Using claudia-bot-builder module to create a Slack Slash Command and AWS that can talk to third party APIs.
+This is another way to keep track of your projects and tasks using the `G`etting `T`hings `D`one approach [GTD](http://www.gtd.com). Projects and Task are hold on [Airtable](http://www.airtable.com)
 
-```npm init```
+## Getting Started
+===> This is a work in progress. <===
 
-```npm install claudia-bot-builder -S
-npm insatll 'other-dependencies' -S```
+### Prerequisities
 
-# CREATE A NEW LAMBDA FUNCTION TO BE USED WITH THE SLACK SLASH COMMAND.
-# HAVE THE SLASH COMMAND token ready
-```claudia create \
---api-module bot \
---region us-east-1 \
---timeout 120 \
---allow-recursion 
---configure-slack-slash-command```
+### Installing
 
+## Running the tests
 
+### How to use it
 
-
-# TO SET STAGEVARIABLES, THEN GET USING request.env.VARIABLE_NAME
-```aws apigateway create-deployment \
---rest-api-id <this is the claudia id from the claudia.json file> \
---variables VARIABLE_NAME=variable_value,ANOTHER_VARIABLE_NAME=another_variable_value \
---stage-name 'latest' \
---stage-description 'lastest version' \
---description 'To connect to Airtable Bases'```
-
-# TO SET PROCESS VARIABLES, THEN GET THEM USING process.env.VARIABLE_NAME
-```claudia update --set-env VARIABLE_NAME=variable_value,ANOTHER_VARIABLE_NAME=another_variable_value```
-
-# FUNCTION NAME
-```ssc```
-
-```claudia create --region us-east-1```
+### Query 'Tasks' in Slack
+* /gtd add Task-Name, Category, Next Action, Creation Date, Due Date, Project
+* /gtd nextactions|athome|atwork|tocall|someday|bills|online
+* /gtd tasks show *Handler *
+* /gtd tasks delete *Handler*
+* /gtd tasks complete *Handler*
+* /gtd tasks update *Handler*, date 2018-07-26, Next Action
+* /gtd tasks last
+### Query 'Projects' in Slack
+* /gtd add Project-Name, Due Date, Parent-Project, BelongsTo
+* /gtd projects
+* /gtd projects show *Handler*
+* /grd projects delete *Handler* tasks
+* /gtd projects complete *Handler*
+* /gtd projects update *Handler* 
+* /gtd projects last
 
 
-# Preparing a Claudia Bot Project
+## Build With
+* Glitch
+* Node.js
+* Airtable
+* Slack
+* Workflow (iOS)
 
-```mkdir dir_name
-cd dir_name
-add the bot.js
-npm installl claudia-bot-builder -S
-npm install claudia -g (if you have not done that)
-npm install 'other_modules' -S
-npm run deploy: claudia create --region us-east-1 --api-module bot
-npm run update: claudia update
-to test => mkdir test
-cd test, create a json file '{ "content": { "path": "/", "method": "GET" } }
-configure for the platform used: claudia update --configure-slack-slash-command, have slack token ready
-if using 3rd party APIs, get the keys
-add the keys as as stage variables in API gateway
-aws apigateway create-deployment \
---rest-api-id <claudia api id> \
---stage-name latest \
---variables VAR_NAME=var_value,ANOTHER_VAR_NAME=another_var_value```
+## Contributing
+Please read CONTRIBUTING.md for details on our code of conduct, and the process for submitting pull request to us.
+
+## Versioning
+
+## Author
+>Pedro J. Salinas
+>[@sqlo](https://www.twitter.com/sqlo)
+>[pjsalinas](https://github.com/pjsalinas)
+
+## License
+
+## Acknowledgments
